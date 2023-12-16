@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>PDF to Text Converter</title>
+</head>
+<body class="bg-gray-100 p-8">
+<div class="max-w-md mx-auto bg-white rounded p-6">
+    <h2 class="text-2xl font-bold mb-4">PDF to Text Converter</h2>
+
+    <form action="javascript:void(0);" id="pdfForm" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="pdf1">Choose PDF File 1:</label>
+            <input type="file" name="pdf1" id="pdf1" accept=".pdf" class="border rounded w-full py-2 px-3">
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="pdf2">Choose PDF File 2:</label>
+            <input type="file" name="pdf2" id="pdf2" accept=".pdf" class="border rounded w-full py-2 px-3">
+        </div>
+
+        <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700"
+                onclick="convertToText()">Convert to Text
+        </button>
+    </form>
+
+    <div class="mt-8">
+        <h3 class="text-lg font-bold mb-4">Output Text:</h3>
+        <pre id="output" class="border p-4 bg-gray-100"></pre>
+    </div>
+</div>
+<script>
+    function convertToText() {
+        const form = document.getElementById('pdfForm');
+        const formData = new FormData(form);
+        console.log(formData)
+        // return false;
+        fetch('http://127.0.0.1:5000/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('output').innerText = data;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+</script>
+</body>
+</html>
