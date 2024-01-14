@@ -1,6 +1,6 @@
 from PyPDF2 import PdfReader
 import docx
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -19,6 +19,7 @@ class FileWrapper:
     def __init__(self, file_name):
         self.name = file_name
         self.text = ""
+        self.read()
     def read(self):
         raise NotImplementedError()
 class DocxFileWrapper(FileWrapper):
@@ -43,13 +44,33 @@ def file_factory(file_name):
         return DocxFileWrapper(file_name)
     else:
         raise NotImplementedError()
+def text_to_dictionary(text):
+    dictionary = {}
+    for word in text.split():
+        if word in dictionary:
+            dictionary[word] += 1
+        else:
+            dictionary[word] = 1
+    return dictionary
 def check_plagiarism(first_file_name, second_file_name):
     first = file_factory(first_file_name)
     second = file_factory(second_file_name)
-    vectors = vectorize([first.read(), second.read()])
-    sim_score = similarity(vectors[0], vectors[1])[0][1]
-    return sim_score
 
+    data1=text_to_dictionary(first.text)
+    data2=text_to_dictionary(second.text)
+    common = {word: min(data1[word], data2[word]) for word in data1 if word in data2 and len(word) > 4}
+    most_frequent = sorted(common.items(), key=lambda x: x[1], reverse=True)[:10]
+    print([{word: freq} for word, freq in most_frequent])
+    vectors = vectorize([first.text, second.text])
+    sim_score = similarity(vectors[0], vectors[1])[0][1]
+    return sim_score*100,[{word: freq} for word, freq in most_frequent]
+
+
+    # data1=text_to_dictionary(first.text)
+    # data2=text_to_dictionary(second.text)
+    # common = {word: min(data1[word], data2[word]) for word in data1 if word in data2 and len(word) > 4}
+    # most_frequent = sorted(common.items(), key=lambda x: x[1], reverse=True)[:10]
+    # print([{word: freq} for word, freq in most_frequent])
 
 @app.route('/')
 def index():
@@ -65,8 +86,9 @@ def upload():
     file_data_2 = request.files['file_data_2']
     # print(file_data_1.filename)
     # print(file_data_2.filename)
-
-    return "Plagiarism score: " + str(check_plagiarism(file_data_1, file_data_2) * 100)
+    ret_val = check_plagiarism(file_data_1, file_data_2)
+    print(ret_val)
+    return jsonify(ret_val)
 
 
 if __name__ == '__main__':
